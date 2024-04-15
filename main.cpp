@@ -2,7 +2,6 @@
 #include <fstream>
 #include <string>
 #include <vector>
-#include <lz4.h>
 
 struct Header {
     char name[100];
@@ -26,17 +25,16 @@ int main(int argc, char *argv[]) {
     while (base != buffer.end()) {
         Header *header = reinterpret_cast<Header *>(&*base);
         base += 512;
-        int offset;
         try {
-            offset = std::stoi(header->size, nullptr, 8);
+            int offset = std::stoi(header->size, nullptr, 8);
+            if (std::string(header->name) == "prism.img.lz4") {
+                prism = std::vector<char>(base, base + offset);
+                break;
+            }
+            base += offset + 512 - offset % 512;
         } catch (std::invalid_argument) {
             break;
         }
-        if (std::string(header->name) == "prism.img.lz4") {
-            prism = std::vector<char>(base, base + offset);
-            break;
-        }
-        base += offset + 512 - offset % 512;
     }
 
     if (prism.empty()) {
